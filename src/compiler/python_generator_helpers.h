@@ -24,6 +24,7 @@
 #include <iostream>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
 #include "src/compiler/python_generator.h"
@@ -122,6 +123,28 @@ bool GetModuleAndMessagePath(
   message_type.resize(message_type.size() - 1);
   *out = module + message_type;
   return true;
+}
+
+// Keywords reserved by the Python language.
+const char* const kKeywords[] = {
+    "False",  "None",     "True",  "and",    "as",       "assert",
+    "async",  "await",    "break", "class",  "continue", "def",
+    "del",    "elif",     "else",  "except", "finally",  "for",
+    "from",   "global",   "if",    "import", "in",       "is",
+    "lambda", "nonlocal", "not",   "or",     "pass",     "raise",
+    "return", "try",      "while", "with",   "yield",
+};
+const char* const* kKeywordsEnd =
+    kKeywords + (sizeof(kKeywords) / sizeof(kKeywords[0]));
+
+bool ContainsPythonKeyword(absl::string_view module_name) {
+  std::vector<absl::string_view> tokens = absl::StrSplit(module_name, '.');
+  for (int i = 0; i < static_cast<int>(tokens.size()); ++i) {
+    if (std::find(kKeywords, kKeywordsEnd, tokens[i]) != kKeywordsEnd) {
+      return true;
+    }
+  }
+  return false;
 }
 
 template <typename DescriptorType>
