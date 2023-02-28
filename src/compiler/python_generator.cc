@@ -720,10 +720,19 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
       const size_t last_dot_pos = module_name.rfind('.');
       if (last_dot_pos == std::string::npos) {
         var["ImportStatement"] = "import " + module_name;
+        out->Print(var, "$ImportStatement$ as $ModuleAlias$\n");
       } else {
-        var["ImportStatement"] = "from " + module_name.substr(0, last_dot_pos) +
+        if (grpc_python_generator::ContainsPythonKeyword(module_name)) {
+          out->Print("import importlib\n");
+          var["ImportStatement"] = "importlib.import('" + module_name.substr(0, last_dot_pos) +
+                                "')"
+          out->Print("$ModuleAlias$ = importlib.import_module('')\n")
+        } else {
+          var["ImportStatement"] = "from " + module_name.substr(0, last_dot_pos) +
                                  " import " +
                                  module_name.substr(last_dot_pos + 1);
+          out->Print(var, "$ImportStatement$ as $ModuleAlias$\n");
+        }
       }
       out->Print(var, "$ImportStatement$ as $ModuleAlias$\n");
     }
